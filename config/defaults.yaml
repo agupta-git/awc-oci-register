@@ -1,0 +1,22 @@
+# AWC marketplace platform defaults (single source of truth).
+# Merged into every team config on load. Override per team in your YAML under awc: or behavior:.
+#
+# To change secret names, namespaces, or console deployment for your environment,
+# edit this file (platform maintainers) or override in team.local.yaml.
+
+awc:
+  pullSecret:
+    name: awc-console-registry-creds
+    namespaces:
+      - auth-config-operator-system
+      - awc-core
+  marketplace:
+    secret: awc-taikun-secrets
+    namespace: awc-core
+    dataKey: MARKETPLACE_REGISTRIES
+    consoleDeployment: awc-console
+  kubeconfig: ""
+
+behavior:
+  restartConsole: true
+  skipIfPrefixPresent: true

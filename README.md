@@ -1,19 +1,11 @@
 # awc-oci-register
 
-Register a **private OCI registry** with **Anywhere Cloud** and the **AWC marketplace** after you publish engine and blueprint artifacts.
+Register a **private OCI registry** with the **Anywhere Cloud** **marketplace** after you publish engine and blueprint artifacts.
 
 The tool performs two updates on the AWC control plane:
 
-1. **Pull credentials** — merge registry host auth into `awc-console-registry-creds` (`.dockerconfigjson` → `auths[<host>]`) in `auth-config-operator-system` and `awc-core`. A reflector propagates the secret to workload namespaces for image/chart pulls.
+1. **Pull credentials** — merge registry host auth into `awc-console-registry-creds` in `auth-config-operator-system` and `awc-core`. A reflector propagates the secret to workload namespaces for image/chart pulls.
 2. **Marketplace catalog** — append the full OCI catalog entry (`registryHost` + `marketplacePrefix`) to `awc-taikun-secrets` → `MARKETPLACE_REGISTRIES` in `awc-core`, then restart `awc-console` when the list changes.
-
-| Concept | Config field | Stored as | Example |
-|---------|--------------|-----------|---------|
-| Registry **host** (pull auth) | `registryHost` | `auths` key in dockerconfigjson | `us-west1-docker.pkg.dev` |
-| Repository **path** (under host) | `marketplacePrefix` | combined into `MARKETPLACE_REGISTRIES` | `phoenix-ai-images/enterprise/awc` |
-| **Full catalog prefix** (computed) | — | comma entry in `MARKETPLACE_REGISTRIES` | `us-west1-docker.pkg.dev/phoenix-ai-images/enterprise/awc` |
-
-This does **not** publish or mirror OCI artifacts (use `awc-marketplace publish` for that).
 
 ## Quick start
 
@@ -33,14 +25,14 @@ PhoenixAI (GCR / Artifact Registry): see [examples/phoenixai-gcr.yaml](examples/
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `apply -f config.yaml` | Patch pull secret and marketplace list |
-| `plan -f config.yaml` | Dry-run; print intended changes |
-| `verify -f config.yaml` | Dependencies, kube context, secrets exist |
-| `init [-o file.yaml]` | Copy annotated template |
 
-Optional: `--set auth.keyFile=/secure/key.json` for CI without editing YAML.
+| Command                 | Description                               |
+| ----------------------- | ----------------------------------------- |
+| `apply -f config.yaml`  | Patch pull secret and marketplace list    |
+| `plan -f config.yaml`   | Dry-run; print intended changes           |
+| `verify -f config.yaml` | Dependencies, kube context, secrets exist |
+| `init [-o file.yaml]`   | Copy annotated template                   |
+
 
 ## Configuration
 
@@ -52,20 +44,35 @@ One YAML file per team or environment. Required:
 
 Examples: [examples/](examples/).
 
+### Platform defaults (`config/defaults.yaml`)
+
+Secret names, Kubernetes namespaces, marketplace secret keys, and behavior flags are defined once in [config/defaults.yaml](config/defaults.yaml). Every team config is **merged** with that file on load—you only need `registryHost`, `marketplacePrefix`, and `auth` in your YAML unless something differs from standard AWC marketplace installs.
+
+- **Platform / release maintainers:** edit `config/defaults.yaml` to change AWC-wide names (e.g. pull-secret namespaces).
+- **One team / environment:** add an `awc:` or `behavior:` block in your team file to override specific keys.
+
+Optional: `--set awc.kubeconfig=/path/to/kubeconfig` for CI.
+
 ### Auth kinds
 
-| `auth.kind` | Registries | Fields |
-|-------------|------------|--------|
-| `gcr` | GCR, Artifact Registry | `keyFile` (username is `_json_key`) |
-| `basic` | Docker Hub, Harbor, Artifactory | `username`, `passwordFile` |
-| `ecr` | Amazon ECR | `region` (uses `aws ecr get-login-password`) |
-| `acr` | Azure ACR | `registryName` (uses `az acr login --expose-token`) |
+
+| `auth.kind` | Registries                      | Fields                                              |
+| ----------- | ------------------------------- | --------------------------------------------------- |
+| `gcr`       | GCR, Artifact Registry          | `keyFile` (username is `_json_key`)                 |
+| `basic`     | Docker Hub, Harbor, Artifactory | `username`, `passwordFile`                          |
+| `ecr`       | Amazon ECR                      | `region` (uses `aws ecr get-login-password`)        |
+| `acr`       | Azure ACR                       | `registryName` (uses `az acr login --expose-token`) |
+
+
+
 
 ## Dependencies
 
 - **Always:** `kubectl`, `jq`, `yq` (v4), `base64`
 - **ECR:** AWS CLI (`aws`)
 - **ACR:** Azure CLI (`az`)
+
+
 
 ## Safety
 

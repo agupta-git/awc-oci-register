@@ -2,6 +2,13 @@
 #
 # registryHost: OCI hostname for dockerconfigjson auths (no path).
 # marketplacePrefix: repository path under that host (no hostname).
+#
+# AWC secret names, namespaces, and behavior defaults live in config/defaults.yaml
+# (merged automatically). Override only what differs for your team, e.g.:
+#
+# awc:
+#   pullSecret:
+#     namespaces: [awc-core]
 
 registryHost: registry.example.com
 marketplacePrefix: my-org/awc
@@ -17,21 +24,3 @@ auth:
   # region: us-west-2
   # acr:
   # registryName: myregistry
-
-# Defaults below match standard AWC marketplace installs; change only if your platform team says so.
-awc:
-  pullSecret:
-    name: awc-console-registry-creds
-    namespaces:
-      - auth-config-operator-system
-      - awc-core
-  marketplace:
-    secret: awc-taikun-secrets
-    namespace: awc-core
-    dataKey: MARKETPLACE_REGISTRIES
-    consoleDeployment: awc-console
-  kubeconfig: ""
-
-behavior:
-  restartConsole: true
-  skipIfPrefixPresent: true

@@ -141,7 +141,8 @@ cmd_init() {
     esac
   done
   cp "$ROOT/examples/team-template.yaml" "$out"
-  log "wrote $out — edit registryHost, marketplacePrefix, and auth, then: awc-oci-register verify -f $out"
+  log "wrote $out — edit registryHost, marketplacePrefix, and auth (AWC names: config/defaults.yaml)"
+  log "then: awc-oci-register verify -f $out"
 }
 
 main() {

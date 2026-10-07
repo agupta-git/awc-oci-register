@@ -2,15 +2,26 @@
 # Load and validate team YAML config (via yq -> JSON).
 
 CONFIG_JSON=""
+DEFAULTS_FILE="${AWC_OCI_REGISTER_ROOT}/config/defaults.yaml"
 
 config_load() {
   local file="$1"
   shift || true
 
   [[ -f "$file" ]] || die "config not found: $file"
+  [[ -f "$DEFAULTS_FILE" ]] || die "defaults not found: $DEFAULTS_FILE"
 
   require_cmds yq jq
-  CONFIG_JSON="$(yq eval -o=json '.' "$file")"
+
+  local defaults_json team_json
+  defaults_json="$(yq eval -o=json '.' "$DEFAULTS_FILE")"
+  team_json="$(yq eval -o=json '.' "$file")"
+
+  CONFIG_JSON="$(echo "$team_json" "$defaults_json" | jq -s '
+    .[1] as $defaults | .[0] |
+    .awc = ($defaults.awc * (.awc // {})) |
+    .behavior = ($defaults.behavior * (.behavior // {}))
+  ')"
 
   local kv key val jq_expr
   while (($# > 0)); do
@@ -25,7 +36,6 @@ config_load() {
       || die "failed to apply --set $key"
   done
 
-  config_apply_defaults
   config_validate
   config_export_shell
 }
@@ -33,24 +43,6 @@ config_load() {
 config_get() {
   local jq_path="$1"
   echo "$CONFIG_JSON" | jq -r "$jq_path"
-}
-
-config_apply_defaults() {
-  CONFIG_JSON="$(echo "$CONFIG_JSON" | jq '
-    .awc //= {} |
-    .awc.pullSecret //= {} |
-    .awc.pullSecret.name //= "awc-console-registry-creds" |
-    .awc.pullSecret.namespaces //= ["auth-config-operator-system", "awc-core"] |
-    .awc.marketplace //= {} |
-    .awc.marketplace.secret //= "awc-taikun-secrets" |
-    .awc.marketplace.namespace //= "awc-core" |
-    .awc.marketplace.dataKey //= "MARKETPLACE_REGISTRIES" |
-    .awc.marketplace.consoleDeployment //= "awc-console" |
-    .awc.kubeconfig //= "" |
-    .behavior //= {} |
-    .behavior.restartConsole //= true |
-    .behavior.skipIfPrefixPresent //= true
-  ')"
 }
 
 config_validate() {
