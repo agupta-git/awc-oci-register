@@ -1,4 +1,5 @@
-marketplacePrefix: 123456789012.dkr.ecr.us-west-2.amazonaws.com/acme/awc
+registryHost: 123456789012.dkr.ecr.us-west-2.amazonaws.com
+marketplacePrefix: acme/awc
 
 auth:
   kind: ecr

@@ -1,4 +1,5 @@
-marketplacePrefix: artifactory.example.com/docker-local/acme/awc
+registryHost: artifactory.example.com
+marketplacePrefix: docker-local/acme/awc
 
 auth:
   kind: basic

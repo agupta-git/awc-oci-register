@@ -1,4 +1,5 @@
-marketplacePrefix: harbor.example.com/acme/awc
+registryHost: harbor.example.com
+marketplacePrefix: acme/awc
 
 auth:
   kind: basic

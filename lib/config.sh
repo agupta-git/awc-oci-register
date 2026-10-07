@@ -36,14 +36,6 @@ config_get() {
 }
 
 config_apply_defaults() {
-  local mp host
-  mp="$(config_get '.marketplacePrefix // empty')"
-  host="$(config_get '.registryHost // empty')"
-  if [[ -z "$host" && -n "$mp" ]]; then
-    host="${mp%%/*}"
-    CONFIG_JSON="$(echo "$CONFIG_JSON" | jq --arg h "$host" '.registryHost = $h')"
-  fi
-
   CONFIG_JSON="$(echo "$CONFIG_JSON" | jq '
     .awc //= {} |
     .awc.pullSecret //= {} |
@@ -62,17 +54,28 @@ config_apply_defaults() {
 }
 
 config_validate() {
-  local mp kind
+  local mp host kind
+  host="$(config_get '.registryHost // empty')"
   mp="$(config_get '.marketplacePrefix // empty')"
-  [[ -n "$mp" ]] || die "marketplacePrefix is required"
-  [[ "$mp" == */* ]] || die "marketplacePrefix must include host and path (e.g. registry.example.com/org/awc)"
+
+  [[ -n "$host" ]] || die "registryHost is required (OCI hostname only, e.g. us-west1-docker.pkg.dev)"
+  [[ "$host" != *"/"* ]] || die "registryHost must be hostname only (no path): $host"
+
+  [[ -n "$mp" ]] || die "marketplacePrefix is required (repository path only, no host)"
+  mp="${mp#/}"
+  [[ "$mp" == *"/"* ]] || die "marketplacePrefix must be a path under the registry (e.g. my-project/enterprise/awc)"
+  [[ "$mp" != *"://"* ]] || die "marketplacePrefix must not be a URL; set registryHost separately"
+
+  if [[ "$mp" == "$host" || "$mp" == "$host/"* ]]; then
+    die "marketplacePrefix must not include registryHost; use registryHost + path only"
+  fi
 
   kind="$(config_get '.auth.kind // empty')"
   [[ -n "$kind" ]] || die "auth.kind is required"
 
   case "$kind" in
-    gcpServiceAccountKey)
-      [[ -n "$(config_get '.auth.keyFile // empty')" ]] || die "auth.keyFile is required for gcpServiceAccountKey"
+    gcr)
+      [[ -n "$(config_get '.auth.keyFile // empty')" ]] || die "auth.keyFile is required for gcr"
       ;;
     basic)
       [[ -n "$(config_get '.auth.username // empty')" ]] || die "auth.username is required for basic"
@@ -85,19 +88,19 @@ config_validate() {
       [[ -n "$(config_get '.auth.registryName // empty')" ]] || die "auth.registryName is required for acr"
       ;;
     *)
-      die "unsupported auth.kind: $kind (use gcpServiceAccountKey, basic, ecr, or acr)"
+      die "unsupported auth.kind: $kind (use gcr, basic, ecr, or acr)"
       ;;
   esac
-
-  local host
-  host="$(config_get '.registryHost // empty')"
-  [[ -n "$host" ]] || die "registryHost could not be derived; set registryHost explicitly"
-  [[ "$host" != *"/"* ]] || die "registryHost must be hostname only (no path): $host"
 }
 
 config_export_shell() {
-  MARKETPLACE_PREFIX="$(config_get '.marketplacePrefix')"
+  local path
   REGISTRY_HOST="$(config_get '.registryHost')"
+  path="$(config_get '.marketplacePrefix')"
+  path="${path#/}"
+  MARKETPLACE_PATH="$path"
+  MARKETPLACE_PREFIX="${REGISTRY_HOST}/${path}"
+
   AUTH_KIND="$(config_get '.auth.kind')"
 
   AWC_KUBECONFIG="$(config_get '.awc.kubeconfig')"

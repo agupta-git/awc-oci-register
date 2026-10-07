@@ -5,7 +5,7 @@ AUTH_PASSWORD=""
 
 auth_resolve() {
   case "$AUTH_KIND" in
-    gcpServiceAccountKey) auth_gcp_resolve ;;
+    gcr) auth_gcr_resolve ;;
     basic) auth_basic_resolve ;;
     ecr) auth_ecr_resolve ;;
     acr) auth_acr_resolve ;;

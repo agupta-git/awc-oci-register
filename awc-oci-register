@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Register a private OCI registry with the AWC Hub (pull secret + Console marketplace catalog).
+# Register a private OCI registry with AWC marketplace (pull secret + MARKETPLACE_REGISTRIES).
 set -euo pipefail
 
 SET_OVERRIDES=()
@@ -12,8 +12,8 @@ source "$ROOT/lib/util.sh"
 source "$ROOT/lib/config.sh"
 # shellcheck source=lib/dockerconfig.sh
 source "$ROOT/lib/dockerconfig.sh"
-# shellcheck source=lib/auth/gcp.sh
-source "$ROOT/lib/auth/gcp.sh"
+# shellcheck source=lib/auth/gcr.sh
+source "$ROOT/lib/auth/gcr.sh"
 # shellcheck source=lib/auth/basic.sh
 source "$ROOT/lib/auth/basic.sh"
 # shellcheck source=lib/auth/ecr.sh
@@ -33,7 +33,7 @@ usage() {
   cat <<EOF
 Usage: awc-oci-register <command> [options]
 
-Register a private OCI registry with Anywhere Cloud on the Hub:
+Register a private OCI registry with Anywhere Cloud and the AWC marketplace:
   - merge pull credentials into awc-console-registry-creds
   - append catalog prefix to MARKETPLACE_REGISTRIES (awc-taikun-secrets)
 
@@ -44,7 +44,7 @@ Commands:
   init    [-o <file.yaml>]                         Write a starter config from template
 
 Environment:
-  KUBECONFIG   Hub kubeconfig (unless awc.kubeconfig is set in config)
+  KUBECONFIG   AWC control plane kubeconfig (unless awc.kubeconfig is set in config)
 
 Examples:
   awc-oci-register verify -f examples/phoenixai-gcr.yaml
@@ -97,7 +97,7 @@ cmd_verify() {
   marketplace_verify
 
   case "$AUTH_KIND" in
-    gcpServiceAccountKey)
+    gcr)
       [[ -r "$(config_get '.auth.keyFile')" ]] || die "cannot read auth.keyFile"
       ;;
     basic)
@@ -105,7 +105,7 @@ cmd_verify() {
       ;;
   esac
 
-  log "verify OK for prefix=$MARKETPLACE_PREFIX host=$REGISTRY_HOST"
+  log "verify OK registryHost=$REGISTRY_HOST marketplacePrefix=$MARKETPLACE_PATH full=$MARKETPLACE_PREFIX"
 }
 
 cmd_apply() {
@@ -141,7 +141,7 @@ cmd_init() {
     esac
   done
   cp "$ROOT/examples/team-template.yaml" "$out"
-  log "wrote $out — edit marketplacePrefix and auth, then: awc-oci-register verify -f $out"
+  log "wrote $out — edit registryHost, marketplacePrefix, and auth, then: awc-oci-register verify -f $out"
 }
 
 main() {

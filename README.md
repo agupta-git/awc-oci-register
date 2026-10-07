@@ -1,23 +1,24 @@
 # awc-oci-register
 
-Register a **private OCI registry** with **Anywhere Cloud** on the AWC Hub after you publish engine and blueprint artifacts.
+Register a **private OCI registry** with **Anywhere Cloud** and the **AWC marketplace** after you publish engine and blueprint artifacts.
 
-The tool performs two Hub updates:
+The tool performs two updates on the AWC control plane:
 
 1. **Pull credentials** — merge registry host auth into `awc-console-registry-creds` (`.dockerconfigjson` → `auths[<host>]`) in `auth-config-operator-system` and `awc-core`. A reflector propagates the secret to workload namespaces for image/chart pulls.
-2. **Marketplace catalog** — append your OCI **prefix** (`host/path/...`) to `awc-taikun-secrets` → `MARKETPLACE_REGISTRIES` in `awc-core`, then restart `awc-console` when the list changes.
+2. **Marketplace catalog** — append the full OCI catalog entry (`registryHost` + `marketplacePrefix`) to `awc-taikun-secrets` → `MARKETPLACE_REGISTRIES` in `awc-core`, then restart `awc-console` when the list changes.
 
-| Concept | Where | Example |
-|---------|--------|---------|
-| Registry **host** (pull auth) | `auths` key in dockerconfigjson | `us-west1-docker.pkg.dev` |
-| Catalog **prefix** (discovery) | `MARKETPLACE_REGISTRIES` | `us-west1-docker.pkg.dev/phoenix-ai-images/enterprise/awc` |
+| Concept | Config field | Stored as | Example |
+|---------|--------------|-----------|---------|
+| Registry **host** (pull auth) | `registryHost` | `auths` key in dockerconfigjson | `us-west1-docker.pkg.dev` |
+| Repository **path** (under host) | `marketplacePrefix` | combined into `MARKETPLACE_REGISTRIES` | `phoenix-ai-images/enterprise/awc` |
+| **Full catalog prefix** (computed) | — | comma entry in `MARKETPLACE_REGISTRIES` | `us-west1-docker.pkg.dev/phoenix-ai-images/enterprise/awc` |
 
 This does **not** publish or mirror OCI artifacts (use `awc-marketplace publish` for that).
 
 ## Quick start
 
 ```bash
-export KUBECONFIG=/path/to/hub-kubeconfig
+export KUBECONFIG=/path/to/awc-control-plane-kubeconfig
 chmod +x ./awc-oci-register
 
 cp examples/phoenixai-gcr.yaml team.local.yaml
@@ -45,8 +46,9 @@ Optional: `--set auth.keyFile=/secure/key.json` for CI without editing YAML.
 
 One YAML file per team or environment. Required:
 
-- `marketplacePrefix` — full OCI catalog prefix (no tag)
-- `auth.kind` — `gcpServiceAccountKey`, `basic`, `ecr`, or `acr`
+- `registryHost` — OCI hostname only (no path)
+- `marketplacePrefix` — repository path under that host (no hostname)
+- `auth.kind` — `gcr`, `basic`, `ecr`, or `acr`
 
 Examples: [examples/](examples/).
 
@@ -54,7 +56,7 @@ Examples: [examples/](examples/).
 
 | `auth.kind` | Registries | Fields |
 |-------------|------------|--------|
-| `gcpServiceAccountKey` | GCR, Artifact Registry | `keyFile` (username is `_json_key`) |
+| `gcr` | GCR, Artifact Registry | `keyFile` (username is `_json_key`) |
 | `basic` | Docker Hub, Harbor, Artifactory | `username`, `passwordFile` |
 | `ecr` | Amazon ECR | `region` (uses `aws ecr get-login-password`) |
 | `acr` | Azure ACR | `registryName` (uses `az acr login --expose-token`) |
@@ -67,4 +69,4 @@ Examples: [examples/](examples/).
 
 ## Safety
 
-Hub secrets are shared platform resources. Export or back up current secret values before patching in production, and coordinate with platform owners when required.
+AWC marketplace secrets on the control plane are shared platform resources. Export or back up current secret values before patching in production, and coordinate with platform owners when required.

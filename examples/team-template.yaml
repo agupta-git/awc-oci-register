@@ -1,14 +1,14 @@
 # Copy with: awc-oci-register init -o team.yaml
 #
-# marketplacePrefix: where the Console discovers engine/blueprint catalogs (host/path, no tag).
-# registryHost: OCI hostname only for dockerconfigjson auths (defaults to first segment of prefix).
+# registryHost: OCI hostname for dockerconfigjson auths (no path).
+# marketplacePrefix: repository path under that host (no hostname).
 
-marketplacePrefix: registry.example.com/my-org/awc
 registryHost: registry.example.com
+marketplacePrefix: my-org/awc
 
 auth:
-  # gcpServiceAccountKey | basic | ecr | acr
-  kind: gcpServiceAccountKey
+  # gcr | basic | ecr | acr
+  kind: gcr
   keyFile: /path/to/service-account.json
   # basic:
   # username: robot
@@ -18,7 +18,7 @@ auth:
   # acr:
   # registryName: myregistry
 
-# Defaults below match standard AWC Hub installs; change only if your platform team says so.
+# Defaults below match standard AWC marketplace installs; change only if your platform team says so.
 awc:
   pullSecret:
     name: awc-console-registry-creds

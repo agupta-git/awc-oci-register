@@ -1,7 +1,0 @@
-{
-  "marketplacePrefix": "123456789012.dkr.ecr.us-west-2.amazonaws.com/acme/awc",
-  "auth": {
-    "kind": "ecr",
-    "region": "us-west-2"
-  }
-}

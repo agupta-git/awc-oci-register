@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 
-auth_gcp_resolve() {
+auth_gcr_resolve() {
   local key_file
   key_file="$(config_get '.auth.keyFile')"
   [[ -r "$key_file" ]] || die "cannot read auth.keyFile: $key_file"
