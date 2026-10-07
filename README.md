@@ -10,12 +10,31 @@ The tool performs two updates on the AWC control plane:
 ## Quick start
 
 ```bash
-export KUBECONFIG=/path/to/awc-control-plane-kubeconfig
+git clone https://github.com/agupta-git/awc-oci-register.git
+cd awc-oci-register
 chmod +x ./awc-oci-register
 
 cp examples/phoenixai-gcr.yaml team.local.yaml
 # edit auth.keyFile and paths
+```
 
+**Kubernetes access** — the tool uses `kubectl` against the AWC control plane (where `awc-core` lives). You do not need a kubeconfig file on disk if `kubectl` already works:
+
+```bash
+kubectl config current-context   # must reach the AWC control plane
+```
+
+If you have a kubeconfig file, either export it or set it in config:
+
+```bash
+export KUBECONFIG=/path/to/awc-control-plane-kubeconfig
+# or in team.local.yaml: awc.kubeconfig: /path/to/kubeconfig
+# or: --set awc.kubeconfig=/path/to/kubeconfig
+```
+
+When export/download of a kubeconfig is not allowed, run from a **bastion, CI agent, or laptop** that already has the correct context in `~/.kube/config`, or ask platform ops for read/write access to the control-plane cluster via your org’s standard kubectl onboarding.
+
+```bash
 ./awc-oci-register verify -f team.local.yaml
 ./awc-oci-register plan  -f team.local.yaml
 ./awc-oci-register apply -f team.local.yaml
