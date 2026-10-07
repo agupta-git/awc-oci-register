@@ -1,0 +1,8 @@
+{
+  "marketplacePrefix": "artifactory.example.com/docker-local/acme/awc",
+  "auth": {
+    "kind": "basic",
+    "username": "ci-user",
+    "passwordFile": "/path/to/artifactory-api-key"
+  }
+}

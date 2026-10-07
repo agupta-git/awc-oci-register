@@ -1,0 +1,6 @@
+marketplacePrefix: harbor.example.com/acme/awc
+
+auth:
+  kind: basic
+  username: robot+acme
+  passwordFile: /path/to/harbor-token

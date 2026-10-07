@@ -1,0 +1,6 @@
+marketplacePrefix: us-west1-docker.pkg.dev/phoenix-ai-images/enterprise/awc
+registryHost: us-west1-docker.pkg.dev
+
+auth:
+  kind: gcpServiceAccountKey
+  keyFile: /path/to/phoenixai-img-pull-awc.json

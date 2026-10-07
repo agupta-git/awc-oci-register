@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+# Register a private OCI registry with the AWC Hub (pull secret + Console marketplace catalog).
+set -euo pipefail
+
+SET_OVERRIDES=()
+CONFIG_FILE=""
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/util.sh
+source "$ROOT/lib/util.sh"
+# shellcheck source=lib/config.sh
+source "$ROOT/lib/config.sh"
+# shellcheck source=lib/dockerconfig.sh
+source "$ROOT/lib/dockerconfig.sh"
+# shellcheck source=lib/auth/gcp.sh
+source "$ROOT/lib/auth/gcp.sh"
+# shellcheck source=lib/auth/basic.sh
+source "$ROOT/lib/auth/basic.sh"
+# shellcheck source=lib/auth/ecr.sh
+source "$ROOT/lib/auth/ecr.sh"
+# shellcheck source=lib/auth/acr.sh
+source "$ROOT/lib/auth/acr.sh"
+# shellcheck source=lib/auth/resolve.sh
+source "$ROOT/lib/auth/resolve.sh"
+# shellcheck source=lib/pull_secret.sh
+source "$ROOT/lib/pull_secret.sh"
+# shellcheck source=lib/marketplace.sh
+source "$ROOT/lib/marketplace.sh"
+# shellcheck source=lib/console.sh
+source "$ROOT/lib/console.sh"
+
+usage() {
+  cat <<EOF
+Usage: awc-oci-register <command> [options]
+
+Register a private OCI registry with Anywhere Cloud on the Hub:
+  - merge pull credentials into awc-console-registry-creds
+  - append catalog prefix to MARKETPLACE_REGISTRIES (awc-taikun-secrets)
+
+Commands:
+  apply   -f <config.yaml> [--set key=value ...]   Apply changes
+  plan    -f <config.yaml> [--set ...]             Dry-run (same as apply with no mutations)
+  verify  -f <config.yaml> [--set ...]             Check deps, kube access, and secrets
+  init    [-o <file.yaml>]                         Write a starter config from template
+
+Environment:
+  KUBECONFIG   Hub kubeconfig (unless awc.kubeconfig is set in config)
+
+Examples:
+  awc-oci-register verify -f examples/phoenixai-gcr.yaml
+  awc-oci-register apply  -f team.yaml
+  awc-oci-register apply  -f examples/phoenixai-gcr.yaml --set auth.keyFile=/secure/key.json
+EOF
+}
+
+parse_config_flags() {
+  CONFIG_FILE=""
+  SET_OVERRIDES=()
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -f|--file)
+        CONFIG_FILE="$2"
+        shift 2
+        ;;
+      --set)
+        SET_OVERRIDES+=("$2")
+        shift 2
+        ;;
+      *)
+        die "unknown option: $1"
+        ;;
+    esac
+  done
+  [[ -n "$CONFIG_FILE" ]] || die "missing -f <config.yaml>"
+}
+
+config_load_from_flags() {
+  if ((${#SET_OVERRIDES[@]} > 0)); then
+    config_load "$CONFIG_FILE" "${SET_OVERRIDES[@]}"
+  else
+    config_load "$CONFIG_FILE"
+  fi
+}
+
+cmd_verify() {
+  parse_config_flags "$@"
+  require_cmds kubectl jq yq base64
+  config_load_from_flags
+
+  case "$AUTH_KIND" in
+    ecr) require_cmds aws ;;
+    acr) require_cmds az ;;
+  esac
+
+  log "kubectl context: $(kubectl_cmd config current-context 2>/dev/null || echo unknown)"
+  pull_secret_verify
+  marketplace_verify
+
+  case "$AUTH_KIND" in
+    gcpServiceAccountKey)
+      [[ -r "$(config_get '.auth.keyFile')" ]] || die "cannot read auth.keyFile"
+      ;;
+    basic)
+      [[ -r "$(config_get '.auth.passwordFile')" ]] || die "cannot read auth.passwordFile"
+      ;;
+  esac
+
+  log "verify OK for prefix=$MARKETPLACE_PREFIX host=$REGISTRY_HOST"
+}
+
+cmd_apply() {
+  local dry="${1:-0}"
+  shift
+  DRY_RUN="$dry"
+  parse_config_flags "$@"
+  require_cmds kubectl jq yq base64
+  config_load_from_flags
+  auth_resolve
+
+  pull_secret_apply_all
+
+  local added=false
+  if marketplace_append_prefix; then
+    added=true
+  fi
+
+  if [[ "$added" == "true" ]]; then
+    console_restart_if_needed true
+  else
+    log "no console restart needed"
+  fi
+}
+
+cmd_init() {
+  local out="$ROOT/examples/team-template.yaml"
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -o|--output) out="$2"; shift 2 ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "unknown option: $1" ;;
+    esac
+  done
+  cp "$ROOT/examples/team-template.yaml" "$out"
+  log "wrote $out — edit marketplacePrefix and auth, then: awc-oci-register verify -f $out"
+}
+
+main() {
+  local cmd="${1:-}"
+  shift || true
+  case "$cmd" in
+    apply) cmd_apply 0 "$@" ;;
+    plan) cmd_apply 1 "$@" ;;
+    verify) cmd_verify "$@" ;;
+    init) cmd_init "$@" ;;
+    -h|--help|"") usage ;;
+    *) die "unknown command: $cmd (try --help)" ;;
+  esac
+}
+
+main "$@"
