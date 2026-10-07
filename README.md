@@ -15,32 +15,32 @@ cd awc-oci-register
 chmod +x ./awc-oci-register
 
 cp examples/phoenixai-gcr.yaml team.local.yaml
-# edit auth.keyFile and paths
+# edit registryHost, marketplacePrefix, auth.keyFile
 ```
 
-**Kubernetes access** — the tool uses `kubectl` against the AWC control plane (where `awc-core` lives). You do not need a kubeconfig file on disk if `kubectl` already works:
+Point `kubectl` at the **AWC control plane** cluster (where `awc-core` runs):
 
-```bash
-kubectl config current-context   # must reach the AWC control plane
-```
+- **Already on / inside that cluster** (kubectl is preconfigured):
 
-If you have a kubeconfig file, either export it or set it in config:
+  ```bash
+  kubectl config current-context
+  ```
 
-```bash
-export KUBECONFIG=/path/to/awc-control-plane-kubeconfig
-# or in team.local.yaml: awc.kubeconfig: /path/to/kubeconfig
-# or: --set awc.kubeconfig=/path/to/kubeconfig
-```
+- **Outside the cluster** — set kubeconfig, then confirm context:
 
-When export/download of a kubeconfig is not allowed, run from a **bastion, CI agent, or laptop** that already has the correct context in `~/.kube/config`, or ask platform ops for read/write access to the control-plane cluster via your org’s standard kubectl onboarding.
+  ```bash
+  export KUBECONFIG=/path/to/awc-control-plane-kubeconfig
+  kubectl config current-context
+  ```
+
+Register the registry:
 
 ```bash
 ./awc-oci-register verify -f team.local.yaml
-./awc-oci-register plan  -f team.local.yaml
-./awc-oci-register apply -f team.local.yaml
+./awc-oci-register apply  -f team.local.yaml
 ```
 
-PhoenixAI (GCR / Artifact Registry): see [examples/phoenixai-gcr.yaml](examples/phoenixai-gcr.yaml).
+Example configs: [examples/](examples/) (PhoenixAI: [phoenixai-gcr.yaml](examples/phoenixai-gcr.yaml)).
 
 ## Commands
 
