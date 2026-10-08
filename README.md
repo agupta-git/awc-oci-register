@@ -4,8 +4,10 @@ Register a **private OCI registry** with the **Anywhere Cloud** **marketplace** 
 
 The tool performs two updates on the AWC control plane:
 
-1. **Pull credentials** — merge registry host auth into `awc-console-registry-creds` in `auth-config-operator-system` and `awc-core`. A reflector propagates the secret to workload namespaces for image/chart pulls.
-2. **Marketplace catalog** — append the full OCI catalog entry (`registryHost` + `marketplacePrefix`) to `awc-taikun-secrets` → `MARKETPLACE_REGISTRIES` in `awc-core`, then restart `awc-console` when the list changes.
+1. Pull credentials — merge registry host auth into `awc-console-registry-creds` in `auth-config-operator-system` and `awc-core`. A reflector propagates the secret to workload namespaces for image/chart pulls.
+2. Marketplace catalog — append the full OCI catalog entry (`registryHost` + `marketplacePrefix`) to `awc-taikun-secrets` → `MARKETPLACE_REGISTRIES` in `awc-core`, then restart `awc-console` when the list changes.
+
+
 
 ## Quick start
 
@@ -18,13 +20,13 @@ cp examples/phoenixai-gcr.yaml config.local.yaml
 # edit registryHost, marketplacePrefix, auth.keyFile
 ```
 
-Point `kubectl` at the **AWC control plane** cluster (where `awc-core` runs):
+Point `kubectl` at the AWC control plane cluster (where `awc-core` runs):
 
-- **Already on the cluster** (kubectl is preconfigured):
+- Already on the cluster (kubectl is preconfigured):
   ```bash
   kubectl config current-context
   ```
-- **Outside the cluster** - set kubeconfig:
+- Outside the cluster - set kubeconfig:
   ```bash
   export KUBECONFIG=/path/to/awc-control-plane-kubeconfig
   kubectl config current-context
@@ -50,6 +52,8 @@ Example configs: [examples/](examples/) (PhoenixAI: [phoenixai-gcr.yaml](example
 | `init [-o file.yaml]`   | Copy annotated template                   |
 
 
+
+
 ## Configuration
 
 Use one YAML file (see [examples/](examples/)). Required fields:
@@ -57,6 +61,8 @@ Use one YAML file (see [examples/](examples/)). Required fields:
 - `registryHost` — OCI hostname only (no path)
 - `marketplacePrefix` — repository path under that host (no hostname)
 - `auth.kind` — `gcr`, `basic`, `ecr`, or `acr`
+
+
 
 ### Platform defaults (`config/defaults.yaml`)
 
@@ -73,13 +79,15 @@ Use one YAML file (see [examples/](examples/)). Required fields:
 | `acr`       | Azure ACR                       | `registryName` (uses `az acr login --expose-token`) |
 
 
+
+
 ## Dependencies
 
 - **Always:** `kubectl`, `jq`, `yq` (v4), `base64`
 - **ECR:** AWS CLI (`aws`)
 - **ACR:** Azure CLI (`az`)
 
-**Install `yq`** ([mikefarah/yq](https://github.com/mikefarah/yq) v4 - configs are YAML):
+**Install** `yq` ([mikefarah/yq](https://github.com/mikefarah/yq) v4 - configs are YAML):
 
 ```bash
 # macOS (Homebrew)
@@ -93,6 +101,8 @@ chmod +x ~/bin/yq
 export PATH="$HOME/bin:$PATH"
 yq eval '.registryHost' examples/phoenixai-gcr.yaml
 ```
+
+
 
 ## Safety
 
