@@ -20,14 +20,11 @@ cp examples/phoenixai-gcr.yaml team.local.yaml
 
 Point `kubectl` at the **AWC control plane** cluster (where `awc-core` runs):
 
-- **Already on / inside that cluster** (kubectl is preconfigured):
-
+- **Already on the cluster** (kubectl is preconfigured):
   ```bash
   kubectl config current-context
   ```
-
-- **Outside the cluster** — set kubeconfig, then confirm context:
-
+- **Outside the cluster** - set kubeconfig:
   ```bash
   export KUBECONFIG=/path/to/awc-control-plane-kubeconfig
   kubectl config current-context
@@ -83,15 +80,11 @@ Optional: `--set awc.kubeconfig=/path/to/kubeconfig` for CI.
 | `acr`       | Azure ACR                       | `registryName` (uses `az acr login --expose-token`) |
 
 
-
-
 ## Dependencies
 
 - **Always:** `kubectl`, `jq`, `yq` (v4), `base64`
 - **ECR:** AWS CLI (`aws`)
 - **ACR:** Azure CLI (`az`)
-
-
 
 ## Safety
 
