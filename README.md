@@ -106,4 +106,4 @@ yq eval '.registryHost' examples/phoenixai-gcr.yaml
 
 ## Safety
 
-AWC marketplace secrets on the control plane are shared platform resources. Export or back up current secret values before patching in production, and coordinate with platform owners when required.
+To do: Add rollback scripts
