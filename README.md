@@ -14,7 +14,7 @@ git clone https://github.com/agupta-git/awc-oci-register.git
 cd awc-oci-register
 chmod +x ./awc-oci-register
 
-cp examples/phoenixai-gcr.yaml team.local.yaml
+cp examples/phoenixai-gcr.yaml config.local.yaml
 # edit registryHost, marketplacePrefix, auth.keyFile
 ```
 
@@ -33,8 +33,8 @@ Point `kubectl` at the **AWC control plane** cluster (where `awc-core` runs):
 Register the registry:
 
 ```bash
-./awc-oci-register verify -f team.local.yaml
-./awc-oci-register apply  -f team.local.yaml
+./awc-oci-register verify -f config.local.yaml
+./awc-oci-register apply  -f config.local.yaml
 ```
 
 Example configs: [examples/](examples/) (PhoenixAI: [phoenixai-gcr.yaml](examples/phoenixai-gcr.yaml)).
@@ -52,22 +52,15 @@ Example configs: [examples/](examples/) (PhoenixAI: [phoenixai-gcr.yaml](example
 
 ## Configuration
 
-One YAML file per team or environment. Required:
+Use one YAML file (see [examples/](examples/)). Required fields:
 
 - `registryHost` — OCI hostname only (no path)
 - `marketplacePrefix` — repository path under that host (no hostname)
 - `auth.kind` — `gcr`, `basic`, `ecr`, or `acr`
 
-Examples: [examples/](examples/).
-
 ### Platform defaults (`config/defaults.yaml`)
 
-Secret names, Kubernetes namespaces, marketplace secret keys, and behavior flags are defined once in [config/defaults.yaml](config/defaults.yaml). Every team config is **merged** with that file on load—you only need `registryHost`, `marketplacePrefix`, and `auth` in your YAML unless something differs from standard AWC marketplace installs.
-
-- **Platform / release maintainers:** edit `config/defaults.yaml` to change AWC-wide names (e.g. pull-secret namespaces).
-- **One team / environment:** add an `awc:` or `behavior:` block in your team file to override specific keys.
-
-Optional: `--set awc.kubeconfig=/path/to/kubeconfig` for CI.
+[config/defaults.yaml](config/defaults.yaml) holds AWC marketplace settings (secret names, namespaces, console deployment, behavior flags). It is merged into your config on load. A minimal file only needs `registryHost`, `marketplacePrefix`, and `auth`; add `awc:` or `behavior:` to override defaults. Use `--set key=value` for one-off overrides (e.g. `awc.kubeconfig`).
 
 ### Auth kinds
 
