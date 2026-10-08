@@ -79,6 +79,21 @@ Use one YAML file (see [examples/](examples/)). Required fields:
 - **ECR:** AWS CLI (`aws`)
 - **ACR:** Azure CLI (`az`)
 
+**Install `yq`** ([mikefarah/yq](https://github.com/mikefarah/yq) v4 - configs are YAML):
+
+```bash
+# macOS (Homebrew)
+brew install yq
+
+# Linux, no root: ~/bin (use yq_linux_arm64 on aarch64)
+uname -m
+mkdir -p ~/bin
+curl -fsSL -o ~/bin/yq https://github.com/mikefarah/yq/releases/download/v4.44.6/yq_linux_amd64
+chmod +x ~/bin/yq
+export PATH="$HOME/bin:$PATH"
+yq eval '.registryHost' examples/phoenixai-gcr.yaml
+```
+
 ## Safety
 
 AWC marketplace secrets on the control plane are shared platform resources. Export or back up current secret values before patching in production, and coordinate with platform owners when required.
