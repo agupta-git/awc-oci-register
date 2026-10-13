@@ -1,5 +1,7 @@
 # awc-oci-register
 
+Until Cloudera Cloud Factory (CCF) supports registering multiple OCI registries via UI/API, use this automation to patch secrets and allow listing partner engines on our Anywhere Cloud marketplace.
+
 Register a **private OCI registry** with the **Anywhere Cloud** **marketplace** after you publish engine and blueprint artifacts.
 
 The tool performs two updates on the AWC control plane:
